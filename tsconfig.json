@@ -1,0 +1,17 @@
+{
+    "compilerOptions": {
+        "target": "ES2019",
+        "removeComments": true,
+        "module": "CommonJS",
+        "moduleResolution": "node",
+        "noImplicitAny": true,
+        "strict": true,
+        "noUnusedLocals": true,
+        "watch": true,
+        "outDir": "dist"
+    },
+    "files": [
+        "fileManager.ts",
+        
+    ]
+}
