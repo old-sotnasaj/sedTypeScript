@@ -1,5 +1,5 @@
-const subExpression = RegExp(`^(s)(\/)(.*)(\/)(.*)(\/)(?<trailCommand>.*)`);
-const flagsExpresion = RegExp(`(?<flags>(I|p|g|w){0,4})(?<fileName>.*)`);
+const cmdExpression = RegExp(`^(s)(\/)(?<oldString>.*)(\/)(?<newString>.*)(\/)(?<flags>(I|p|g|w){0,4})(?<fileName>.*)`);
+//const flagsExpresion = RegExp(`(?<flags>(I|p|g|w){0,4})(?<fileName>.*)`);
 const isEmpty = /^\s*$/;
 
 export enum Flags {
@@ -9,20 +9,11 @@ export enum Flags {
     gFLAG = 'g'
 }
 
-export const groupsExp = RegExp(`^(?<command>s)\
-(?<openslash>\/)\
-(?<old>.*)\
-(?<slash>\/)\
-(?<new>.*)\
-(?<closeslash>\/)\
-(?<flags>(I|g|w|p|){0,4})\
-(?<file>.*)`);
-
 export function validateSubCommand(command: string): boolean {
-    let commandGroups: { [key: string]: string; } | undefined = command.match(subExpression)?.groups;
-    if (commandGroups !== undefined) {
-        let flags = getFlagsArray(commandGroups.trailCommand);
-        let fileName = getWFileName(commandGroups.trailCommand);
+    let cmdGroups: { [key: string]: string; } | undefined = command.match(cmdExpression)?.groups;
+    if (cmdGroups !== undefined) {
+        let flags = getFlagsArray(command);
+        let fileName = getWFileName(command);
         if (flags === null) {
             console.error('Bad flags');
         } else {
@@ -47,9 +38,8 @@ export function validateSubCommand(command: string): boolean {
     return false;
 }
 
-
-function getWFileName(trailCommand: string): string {
-    let cmdFlags: { [key: string]: string; } | undefined = trailCommand.match(flagsExpresion)?.groups;
+export function getWFileName(command: string): string {
+    let cmdFlags: { [key: string]: string; } | undefined = command.match(cmdExpression)?.groups;
     if (cmdFlags !== undefined) {
         let fileName = cmdFlags.flags.substring(cmdFlags.flags.indexOf('w') + 1);
         return `${fileName}${cmdFlags.fileName}`;
@@ -69,14 +59,14 @@ function checkFlags(flags: string[]): boolean {
     return true
 }
 
-function getFlagsArray(trailCommand: string): string[] | null {
-    let cmdFlags: { [key: string]: string; } | undefined = trailCommand.match(flagsExpresion)?.groups;
+export function getFlagsArray(command: string): string[] | null {
+    let cmdFlags: { [key: string]: string; } | undefined = command.match(cmdExpression)?.groups;
     if (cmdFlags !== undefined) {
         let flags = cmdFlags.flags.split('w', 1)[0];
         if (!checkFlags([...flags])) {
             return null
         }
-        if (cmdFlags.flags.match(/.*w.*/)) {
+        if ([...cmdFlags.flags].includes(Flags.wFLAG)) {
             return [...flags, 'w'];
         }
         return [...flags];
@@ -84,18 +74,17 @@ function getFlagsArray(trailCommand: string): string[] | null {
     return [];
 }
 
-export function replaceExpression(command: string, flags: string) {
-    //first we checks if it is going to be both global and printed
-    if (/(.*g.*I.*)|(.*I.*g.*)/.test(flags)) {
-        return RegExp(command, 'ig');
+export function replaceExpression(command: string): RegExp | null {
+    let cmdGroups: { [key: string]: string; } | undefined = command.match(cmdExpression)?.groups;
+    if (cmdGroups != undefined) {
+        let flags: string[] | null = getFlagsArray(command);
+        let oldString = cmdGroups.oldString;
+        if (flags != null) {
+            if (flags.includes(Flags.gFLAG && Flags.IFLAG)) return RegExp(oldString, 'ig');
+            if (flags.includes(Flags.IFLAG)) return RegExp(oldString, 'i');
+            if (flags.includes(Flags.gFLAG)) return RegExp(oldString, 'g');
+        }
+        return RegExp(oldString);
     }
-    //first we checks if it is going to be just global
-    if (/(.*g.*)/.test(flags)) {
-        return RegExp(command, 'g');
-    }
-    //first we checks if she is going to be just insesitive with us :C
-    if (/(.*I.*)/.test(flags)) {
-        return RegExp(command, 'i');
-    }
-    return RegExp(command);
+    return null;
 }
