@@ -1,16 +1,12 @@
 import * as fs from 'fs';
-import { Flags, replaceExpression, validateSubCommand, getFlagsArray, getWFileName } from './commandHelper';
-import {replaceFile,writeToFile} from './fileManager';
+import { FLAGS, replaceExpression, validateSubCommand, getFlagsArray, getWFileName } from './commandHelper';
+import { replaceFile, writeToFile } from './fileManager';
+import { Options } from './sedBin';
 import * as readLine from 'readline';
 
-export interface Options {
-  expression: string[],
-  silent: boolean,
-  inPlace: boolean,
-  files: string
-}
+const BAKUP = 'bak.up';
 
-export function executeCommand(commands: string, file: string, options: Options) {
+export function executeCommand(commands: string[], file: string, options: Options) {
   let patternSpace: string; // patternSpace .....
   let wFlag = false; // w flag
   let printDemand = false; // By p flag
@@ -25,7 +21,7 @@ export function executeCommand(commands: string, file: string, options: Options)
     patternSpace = line.toString(); // Fill patterspace with original content
 
     for (let cmd of commands) {
-      if (!validateSubCommand(cmd)) {
+      if (validateSubCommand(cmd) === false) {
         console.error('Some of the commands seems to be wrong --> ' + cmd + ' <--');
         process.exit();
       }
@@ -34,23 +30,26 @@ export function executeCommand(commands: string, file: string, options: Options)
       replaceCMD = replaceExpression(cmd);
       flags = getFlagsArray(cmd);
       wFile = getWFileName(cmd);
-
-      if (replaceCMD == null || flags == null) process.exit();
-
-
-      if (flags.includes(Flags.pFLAG)) printDemand = true; // activate print by demand
+      if (replaceCMD === null || flags === null) process.exit();
+      if (flags.includes(FLAGS.pFLAG)) printDemand = true; // activate print by demand
       if (replaceCMD[0].test(patternSpace)) match = true; // activate match
       //respective replacement of the content
       patternSpace = patternSpace.replace(replaceCMD[0], replaceCMD[1]);
-      // checks for W flag
-      if (flags.includes(Flags.wFLAG)) wFlag = true;
+      // checks for W flag 
+      if (flags.includes(FLAGS.wFLAG)) wFlag = true;
     }
-
-
     switch (true) {
+
       case options.silent && match && printDemand:
         console.log(patternSpace);
         stringPipe += patternSpace + '\n';
+        break;
+
+      case options.silent && match:
+        stringPipe += patternSpace + '\n';
+        break;
+      
+      case options.silent:
         break;
 
       case match && printDemand:
@@ -59,13 +58,10 @@ export function executeCommand(commands: string, file: string, options: Options)
         stringPipe += patternSpace + '\n';
         break;
 
-      case options.silent && match:
-        stringPipe += patternSpace + '\n';
-        break;
-
       case match:
         console.log(patternSpace);
         stringPipe += patternSpace + '\n';
+        break;
 
       default:
         console.log(patternSpace);
@@ -75,9 +71,6 @@ export function executeCommand(commands: string, file: string, options: Options)
 
   lineReader.on('close', () => {
     if (wFlag) writeToFile(wFile, stringPipe);
-    if (options.inPlace) replaceFile(file, wFile, stringPipe);
+    if (options.inPlace) replaceFile(file, BAKUP, stringPipe);
   });
 }
-
-
-

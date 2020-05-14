@@ -10,8 +10,7 @@ export function checkReadExist(file: string): boolean {
     return true;
 }
 
-export function replaceFile(oldFile: string, newFile: string, content: string): void {
-
+export async function replaceFile(oldFile: string, newFile: string, content: string) {
     fs.writeFile(newFile, content, (err) => {
         if (err) throw err;
         fs.unlink(oldFile, (err) => {
@@ -24,11 +23,11 @@ export function replaceFile(oldFile: string, newFile: string, content: string): 
     });
 }
 
-export function writeToFile(file: string, content: string): void {
-    fs.writeFile(file, content, err => {
+export async function writeToFile(file: string, content: string) {
+    file = file.trim();
+    fs.writeFile(file, content,err => {
         if (err) throw err;
         console.log(`\n File Created [ /w ] ${file} \n`);
     })
-
 }
 

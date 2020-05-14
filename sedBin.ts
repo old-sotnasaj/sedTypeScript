@@ -90,7 +90,7 @@ let options: Options = {
 };
 
 if (argv.file !== undefined) {
-    let commandsF: string[];
+    let commandsF: string[] = [];
     let lineReader = lr.createInterface({
         input: fs.createReadStream(argv.file),
     });
