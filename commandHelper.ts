@@ -74,17 +74,20 @@ export function getFlagsArray(command: string): string[] | null {
     return [];
 }
 
-export function replaceExpression(command: string): RegExp | null {
+export function replaceExpression(command: string): [RegExp, string] | null {
     let cmdGroups: { [key: string]: string; } | undefined = command.match(cmdExpression)?.groups;
     if (cmdGroups != undefined) {
         let flags: string[] | null = getFlagsArray(command);
         let oldString = cmdGroups.oldString;
         if (flags != null) {
-            if (flags.includes(Flags.gFLAG && Flags.IFLAG)) return RegExp(oldString, 'ig');
-            if (flags.includes(Flags.IFLAG)) return RegExp(oldString, 'i');
-            if (flags.includes(Flags.gFLAG)) return RegExp(oldString, 'g');
+            if (flags.includes(Flags.gFLAG && Flags.IFLAG))
+                return [RegExp(oldString, 'ig'), cmdGroups.oldString];
+            if (flags.includes(Flags.IFLAG))
+                return [RegExp(oldString, 'i'), cmdGroups.oldString];
+            if (flags.includes(Flags.gFLAG))
+                return [RegExp(oldString, 'g'), cmdGroups.oldString];
         }
-        return RegExp(oldString);
+        return [RegExp(oldString), cmdGroups.oldString];
     }
     return null;
 }
