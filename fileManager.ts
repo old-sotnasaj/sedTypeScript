@@ -1,5 +1,4 @@
 import * as fs from 'fs';
-
 export function checkReadExist(file: string): boolean {
     fs.access(file, fs.constants.F_OK | fs.constants.R_OK, err => {
         if (err) {
