@@ -1,3 +1,7 @@
+import * as lr from 'readline';
+import * as fs from 'fs';
+
+
 const cmdExpression = RegExp(`^(s)(\/)(?<oldString>.*)(\/)(?<newString>.*)(\/)(?<flags>(I|p|g|w){0,4})(?<fileName>.*)`);
 const isEmpty = /^\s*$/;
 
@@ -6,6 +10,10 @@ export enum FLAGS {
     IFLAG = 'I',
     pFLAG = 'p',
     gFLAG = 'g'
+}
+export interface ReplaceExpression {
+    expression: RegExp,
+    newValue: string
 }
 export function validateSubCommand(command: string): boolean {
     let cmdGroups: { [key: string]: string; } | undefined = command.match(cmdExpression)?.groups;
@@ -22,11 +30,8 @@ export function validateSubCommand(command: string): boolean {
             return (isEmpty.test(fileName)) ? true : false;
         }
     }
-    return (!isEmpty.test(fileName)) ? true : false;
+    return (isEmpty.test(fileName)) ? true : false;
 }
-
-
-
 
 export function getWFileName(command: string): string {
     let cmdFlags: { [key: string]: string; } | undefined = command.match(cmdExpression)?.groups;
@@ -66,27 +71,32 @@ export function getFlagsArray(command: string): string[] | null {
     return [];
 }
 
-export function replaceExpression(command: string): [RegExp, string] | null {
+export function replaceExpression(command: string): ReplaceExpression | null {
     let cmdGroups: { [key: string]: string; } | undefined = command.match(cmdExpression)?.groups;
     if (cmdGroups != undefined) {
         let flags: string[] | null = getFlagsArray(command);
         let oldString = cmdGroups.oldString;
         if (flags != null) {
             if (flags.includes(FLAGS.gFLAG && FLAGS.IFLAG))
-                return [RegExp(oldString, 'ig'), cmdGroups.newString];
+                return { expression: RegExp(oldString, 'ig'), newValue: cmdGroups.newString };
             if (flags.includes(FLAGS.IFLAG))
-                return [RegExp(oldString, 'i'), cmdGroups.newString];
+                return { expression: RegExp(oldString, 'i'), newValue: cmdGroups.newString };
             if (flags.includes(FLAGS.gFLAG))
-                return [RegExp(oldString, 'g'), cmdGroups.newString];
+                return { expression: RegExp(oldString, 'g'), newValue: cmdGroups.newString };
         }
-        return [RegExp(oldString), cmdGroups.newString];
+        return { expression: RegExp(oldString), newValue: cmdGroups.newString };
     }
     return null;
 }
 
-let test = 's/a/5/Igp';
-console.log(validateSubCommand(test));
-console.log(replaceExpression(test));
-console.log(getFlagsArray(test));
-console.log(getWFileName(test));
+export function getCommandsFile(file: string): string[] | null {
+    let commandArray: string[] = [];
+    let lineReader = lr.createInterface({
+        input: fs.createReadStream(file),
+    });
+    lineReader.on('line', function (line) {
+        commandArray.push(line.toString());
+    });
+    return commandArray;
+}
 

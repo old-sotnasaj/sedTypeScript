@@ -2,15 +2,14 @@
 
 import * as yargs from 'yargs';
 import { checkReadExist } from './fileManager';
-import * as lr from 'readline';
-import * as fs from 'fs';
-import {executeCommand} from './commandExecution'
+import { executeCommand } from './commandExecution'
+import { getCommandsFile } from './commandHelper'
 
 export interface Options {
- silent : boolean,
- expression: string[] | undefined,
- inPlace : boolean,
- file : string | undefined
+    silent: boolean,
+    expression: string[] | undefined,
+    inPlace: boolean,
+    file: string | undefined
 }
 
 // export.command ¿? export.handler ¿? --read to improve
@@ -51,14 +50,14 @@ const argv = yargs
             type: 'string',
         },
     })
-    .command('$0 <path>','***IMPORTANTE ',
+    .command('$0 <path>', '***IMPORTANTE ',
         (yargs) => {
             yargs.positional('path', {
                 describe: 'File to be processed',
                 type: 'string',
                 array: false,
                 demandOption: true,
-                
+
             });
         }
     )
@@ -69,7 +68,7 @@ const argv = yargs
         throw new Error('Some files seems to be wrong, give them a check ;) ');
     })
     .check((yargs) => {
-        if (yargs.f === undefined) {
+        if (yargs.file === undefined) {
             return true;
         } else {
             if (checkReadExist(yargs.f as string)) {
@@ -90,27 +89,20 @@ let options: Options = {
 };
 
 if (argv.file !== undefined) {
-    let commandsF: string[] = [];
-    let lineReader = lr.createInterface({
-        input: fs.createReadStream(argv.file),
-    });
-    lineReader.on('line', function (line) {
-        commandsF.push(line.toString());
-    });
-    lineReader.on('close', () => {
-        if (argv.expression !== undefined) {
-            executeCommand([...commandsF, ...argv.expression], argv.path as string, options);
-        } else {
-            executeCommand(commandsF, argv.path as string, options);
-        }
-    });
+    let commands: string[] | null = getCommandsFile(argv.file);
+    if (commands === null) {
+        process.exit();
+    } else if (argv.expression !== undefined && argv.expression.length > 0) {
+        executeCommand([...commands, ...argv.expression], argv.path as string, options);
+    } else {
+        executeCommand(commands, argv.path as string, options);
+    }
 }
 // Executed when -e argument is provided (or multiple)
 // Also the first positional argument is overrided but required (*Behaviour to be fix)
 else if (argv.expression !== undefined) {
     executeCommand(argv.expression, argv.path as string, options);
 }
-
 // if both a and b are not provided,
 else {
     console.log(
