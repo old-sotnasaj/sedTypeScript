@@ -88,25 +88,31 @@ let options: Options = {
     file: argv.file,
 };
 
-if (argv.file !== undefined) {
-    let commands: string[] | null = getCommandsFile(argv.file);
-    if (commands === null) {
-        process.exit();
-    } else if (argv.expression !== undefined && argv.expression.length > 0) {
-        executeCommand([...commands, ...argv.expression], argv.path as string, options);
-    } else {
-        executeCommand(commands, argv.path as string, options);
+entryPoint();
+
+async function entryPoint(){
+
+    if (argv.file !== undefined) {
+        let commands: string[] = await getCommandsFile(argv.file);
+        if (commands === null) {
+            process.exit();
+        }
+        if (argv.expression !== undefined && argv.expression.length > 0) {
+            executeCommand([...commands, ...argv.expression], argv.path as string, options);
+        } else {
+            executeCommand(commands, argv.path as string, options);
+        }
     }
-}
-// Executed when -e argument is provided (or multiple)
-// Also the first positional argument is overrided but required (*Behaviour to be fix)
-else if (argv.expression !== undefined) {
-    executeCommand(argv.expression, argv.path as string, options);
-}
-// if both a and b are not provided,
-else {
-    console.log(
-        'At least one -e command or a file with commands should be provided'
-    );
-    process.exit();
+    // Executed when -e argument is provided (or multiple)
+    // Also the first positional argument is overrided but required (*Behaviour to be fix)
+    else if (argv.expression !== undefined) {
+        executeCommand(argv.expression, argv.path as string, options);
+    }
+    // if both a and b are not provided,
+    else {
+        console.log(
+            'At least one -e command or a file with commands should be provided'
+        );
+        process.exit();
+    }
 }
