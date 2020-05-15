@@ -12,7 +12,9 @@
     },
     "files": [
         "fileManager.ts",
-        "commandHelper.ts"
+        "commandHelper.ts",
+        "sedBin.ts",
+        "commandExecution.ts",
         
     ]
 }
