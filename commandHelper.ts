@@ -89,14 +89,14 @@ export function replaceExpression(command: string): ReplaceExpression | null {
     return null;
 }
 
-export function getCommandsFile(file: string): string[] | null {
+export async function getCommandsFile(file: string): Promise<string[]> {
     let commandArray: string[] = [];
     let lineReader = lr.createInterface({
         input: fs.createReadStream(file),
     });
-    lineReader.on('line', function (line) {
+    for await (const line of lineReader) {
         commandArray.push(line.toString());
-    });
-    return commandArray;
+    }
+    return [...commandArray];
 }
 
